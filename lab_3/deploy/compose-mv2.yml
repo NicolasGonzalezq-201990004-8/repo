@@ -17,6 +17,7 @@ services:
     environment:
       - CLIENT_ID=Pasajero-2
       - COORDINATOR_ADDR=10.35.168.112:50070
+      - DATANODE_PORT=50051
 
   mr_client2:
     build: 
@@ -24,4 +25,6 @@ services:
       dockerfile: mr_client/Dockerfile
     environment:
       - BROKER_ADDR=10.35.168.15:50050
+      - COORDINATOR_ADDR=10.35.168.112:50070
+
 
