@@ -23,8 +23,12 @@ services:
     environment:
       - CLIENT_ID=Pasajero-1
       - COORDINATOR_ADDR=10.35.168.112:50070
+      - DATANODE_PORT=50051
 
   mr_client1:
     build: ./mr_client
     environment:
       - BROKER_ADDR=10.35.168.15:50050
+      - COORDINATOR_ADDR=10.35.168.112:50070
+
+
