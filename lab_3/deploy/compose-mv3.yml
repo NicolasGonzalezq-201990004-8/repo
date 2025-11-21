@@ -1,6 +1,8 @@
 services:
   datanode1:
-    build: ./datanode
+    build: 
+      context: ..
+      dockerfile: datanode/Dockerfile
     environment:
       - DATANODE_ID=D1
       - DATANODE_ADDR=10.35.168.17:50051
@@ -10,7 +12,9 @@ services:
       - "50051:50051"
 
   consensus2:
-    build: ./consensus
+    build: 
+      context: ..
+      dockerfile: consensus/Dockerfile
     environment:
       - NODE_ID=ATC-2
       - CONSENSUS_PORT=:50060
@@ -19,7 +23,10 @@ services:
       - "50060:50060"
 
   ryw_client3:
-    build: ./ryw_client
+    build: 
+      context: ..
+      dockerfile: ryw_client/Dockerfile
     environment:
       - CLIENT_ID=Pasajero-3
       - COORDINATOR_ADDR=10.35.168.112:50070
+
