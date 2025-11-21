@@ -1,6 +1,8 @@
 services:
   coordinator:
-    build: ./coordinator
+    build: 
+      context: ..
+      dockerfile: coordinator/Dockerfile
     environment:
       - COORDINATOR_PORT=:50070
       - BROKER_ADDR=10.35.168.15:50050
@@ -8,7 +10,9 @@ services:
       - "50070:50070"
 
   datanode2:
-    build: ./datanode
+    build: 
+      context: ..
+      dockerfile: datanode/Dockerfile
     environment:
       - DATANODE_ID=D2
       - DATANODE_ADDR=10.35.168.112:50051
@@ -18,10 +22,13 @@ services:
       - "50051:50051"
 
   consensus3:
-    build: ./consensus
+    build: 
+      context: ..
+      dockerfile: consensus/Dockerfile
     environment:
       - NODE_ID=ATC-3
       - CONSENSUS_PORT=:50060
       - PEER_ADDRESSES=ATC-1=10.35.168.16:50060,ATC-2=10.35.168.17:50060
     ports:
       - "50060:50060"
+
