@@ -1,0 +1,20 @@
+services:
+  consensus1:
+    build: ./consensus
+    environment:
+      - NODE_ID=ATC-1
+      - CONSENSUS_PORT=:50060
+      - PEER_ADDRESSES=ATC-2=10.35.168.17:50060,ATC-3=10.35.168.112:50060
+    ports:
+      - "50060:50060"
+
+  ryw_client2:
+    build: ./ryw_client
+    environment:
+      - CLIENT_ID=Pasajero-2
+      - COORDINATOR_ADDR=10.35.168.112:50070
+
+  mr_client2:
+    build: ./mr_client
+    environment:
+      - BROKER_ADDR=10.35.168.15:50050

@@ -1,0 +1,27 @@
+services:
+  coordinator:
+    build: ./coordinator
+    environment:
+      - COORDINATOR_PORT=:50070
+      - BROKER_ADDR=10.35.168.15:50050
+    ports:
+      - "50070:50070"
+
+  datanode2:
+    build: ./datanode
+    environment:
+      - DATANODE_ID=D2
+      - DATANODE_ADDR=10.35.168.112:50051
+      - DATANODE_ADDRESSES=10.35.168.17:50051,10.35.168.112:50051,10.35.168.15:50051
+      - DATANODE_PORT=50051
+    ports:
+      - "50051:50051"
+
+  consensus3:
+    build: ./consensus
+    environment:
+      - NODE_ID=ATC-3
+      - CONSENSUS_PORT=:50060
+      - PEER_ADDRESSES=ATC-1=10.35.168.16:50060,ATC-2=10.35.168.17:50060
+    ports:
+      - "50060:50060"

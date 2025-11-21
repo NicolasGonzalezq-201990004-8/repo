@@ -1,0 +1,30 @@
+services:
+  broker:
+    build: ./broker
+    environment:
+      - BROKER_PORT=50050
+      - DATANODE_ADDRESSES=10.35.168.17:50051,10.35.168.112:50051,10.35.168.15:50051
+      - CONSENSUS_ADDRESSES=10.35.168.16:50060,10.35.168.17:50060,10.35.168.112:50060
+    ports:
+      - "50050:50050"
+
+  datanode3:
+    build: ./datanode
+    environment:
+      - DATANODE_ID=D3
+      - DATANODE_ADDR=10.35.168.15:50051
+      - DATANODE_ADDRESSES=10.35.168.17:50051,10.35.168.112:50051,10.35.168.15:50051
+      - DATANODE_PORT=50051
+    ports:
+      - "50051:50051"
+
+  ryw_client1:
+    build: ./ryw_client
+    environment:
+      - CLIENT_ID=Pasajero-1
+      - COORDINATOR_ADDR=10.35.168.112:50070
+
+  mr_client1:
+    build: ./mr_client
+    environment:
+      - BROKER_ADDR=10.35.168.15:50050
