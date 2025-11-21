@@ -1,6 +1,8 @@
 services:
   broker:
-    build: ./broker
+    build:
+      context: ..
+      dockerfile: broker/Dockerfile
     environment:
       - BROKER_PORT=50050
       - DATANODE_ADDRESSES=10.35.168.17:50051,10.35.168.112:50051,10.35.168.15:50051
@@ -9,7 +11,9 @@ services:
       - "50050:50050"
 
   datanode3:
-    build: ./datanode
+    build: 
+      context: ..
+      dockerfile: datanode/Dockerfile
     environment:
       - DATANODE_ID=D3
       - DATANODE_ADDR=10.35.168.15:50051
@@ -34,6 +38,7 @@ services:
     environment:
       - BROKER_ADDR=10.35.168.15:50050
       - COORDINATOR_ADDR=10.35.168.112:50070
+
 
 
 
