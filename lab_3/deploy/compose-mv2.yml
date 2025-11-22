@@ -16,7 +16,7 @@ services:
       dockerfile: ryw_client/Dockerfile
     environment:
       - CLIENT_ID=Pasajero-2
-      - COORDINATOR_ADDR=${COORDINATOR_ADDR:-10.35.168.112:50070}
+      - COORDINATOR_ADDR=${COORDINATOR_ADDR:-10.35.168.122:50070}
       - DATANODE_PORT=50051
 
   mr_client2:
