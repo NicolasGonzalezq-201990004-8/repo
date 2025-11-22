@@ -20,11 +20,12 @@ services:
       - DATANODE_PORT=50051
 
   mr_client2:
+    container_name: mr_client2
     build:
       context: ..
       dockerfile: mr_client/Dockerfile
     environment:
       - BROKER_ADDR=${BROKER_ADDR:-10.35.168.15:50050}
-      - COORDINATOR_ADDR=${COORDINATOR_ADDR:-10.35.168.112:50070}
+      - CLIENT_ID=MR-Pass-2
 
 

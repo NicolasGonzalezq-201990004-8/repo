@@ -22,12 +22,24 @@ services:
       - consensus2
       - consensus3
     
-  mr_client:
-    container_name: mr_client
+  mr_client1:
+    container_name: mr_client1
     build:
       context: .
       dockerfile: mr_client/Dockerfile
     environment:
+      - CLIENT_ID=MR-Pass-1
+      - BROKER_ADDR=broker:50050
+    depends_on:
+      - broker
+
+  mr_client2:
+    container_name: mr_client2
+    build:
+      context: .
+      dockerfile: mr_client/Dockerfile
+    environment:
+      - CLIENT_ID=MR-Pass-2
       - BROKER_ADDR=broker:50050
     depends_on:
       - broker

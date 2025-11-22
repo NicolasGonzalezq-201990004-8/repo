@@ -38,14 +38,14 @@ func loadFlights() ([]string, error) {
 // -----------------------------
 // WORKER: Cliente MR independiente
 // -----------------------------
-func mrWorker(workerID int, brokerAddr string, flights []string) {
+func mrWorker(workerID string, brokerAddr string, flights []string) {
 
 	client, err := NewMRClient(brokerAddr)
 	if err != nil {
-		log.Fatalf("[Worker %d] Error creando cliente MR: %v", workerID, err)
+		log.Fatalf("[Worker %s] Error creando cliente MR: %v", workerID, err)
 	}
 
-	log.Printf("[Worker %d] Iniciado correctamente", workerID)
+	log.Printf("[Worker %s] Iniciado correctamente", workerID)
 
 	for {
 		// 1. Elegir vuelo al azar
@@ -54,9 +54,9 @@ func mrWorker(workerID int, brokerAddr string, flights []string) {
 		// 2. Consultar
 		resp, err := client.QueryFlightMR(flightID)
 		if err != nil {
-			log.Printf("[Worker %d] Error consultando vuelo %s: %v", workerID, flightID, err)
+			log.Printf("[Worker %s] Error consultando vuelo %s: %v", workerID, flightID, err)
 		} else {
-			fmt.Printf("\n===== WORKER %d — MONOTONIC READ =====\n", workerID)
+			fmt.Printf("\n===== WORKER %s — MONOTONIC READ =====\n", workerID)
 			fmt.Printf("Vuelo:   %s\n", resp.FlightId)
 			fmt.Printf("Estado:  %s\n", resp.Status)
 			fmt.Printf("Gate:    %s\n", resp.Gate)
@@ -74,6 +74,11 @@ func main() {
 	if brokerAddr == "" {
 		log.Fatal("BROKER_ADDR no definido")
 	}
+	clientID := os.Getenv("CLIENT_ID")
+	if clientID == "" {
+		log.Println("CLIENT_ID no configurado, usando valores por defecto.")
+		clientID = "MR-Generic"
+	}
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -85,8 +90,7 @@ func main() {
 
 	log.Printf("Vuelos disponibles: %v", flights)
 
-	// Lanzar dos clientes en paralelo
-	go mrWorker(1, brokerAddr, flights)
+	mrWorker(clientID, brokerAddr, flights)
 
 	select {}
 }
