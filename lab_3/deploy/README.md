@@ -49,25 +49,6 @@ variables de entorno sin editar los YAML.
 3. Verifica conectividad desde cada contenedor a sus peers (ping o `grpcurl`) usando
    las IPs configuradas. Si alguno no responde, corrige la variable en esa VM.
 
-### Atajo: usar archivos `.env` por VM
-En `deploy/` hay plantillas listas para cada host:
-
-- `.env.mv1.example` → broker + datanode3 + clientes.
-- `.env.mv2.example` → consenso ATC-1 + clientes.
-- `.env.mv3.example` → datanode1 + consenso ATC-2 + cliente.
-- `.env.mv4.example` → coordinador + datanode2 + consenso ATC-3.
-
-Pruébalo así en cada VM (ajusta las IPs editando la copia local):
-
-```bash
-cp deploy/.env.mv1.example deploy/.env.mv1
-# editar deploy/.env.mv1 con tus IPs reales
-docker compose --env-file deploy/.env.mv1 -f deploy/compose-mv1.yml up -d
-```
-
-Repite el mismo patrón para MV2–MV4 usando el archivo `.env` correspondiente para
-evitar modificar los YAML.
-
 ## Notas
 - Si pruebas solo en una VM, puedes apuntar a los hostnames internos del compose
   (por ejemplo, `BROKER_ADDR=broker:50050`, `DATANODE_ADDRESSES=datanode3:50051`).
