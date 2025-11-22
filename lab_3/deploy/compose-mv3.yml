@@ -1,34 +1,34 @@
 services:
   datanode1:
-    build: 
+    build:
       context: ..
       dockerfile: datanode/Dockerfile
     environment:
       - DATANODE_ID=D1
-      - DATANODE_ADDR=10.35.168.17:50051
-      - DATANODE_ADDRESSES=10.35.168.17:50051,10.35.168.112:50051,10.35.168.15:50051
+      - DATANODE_ADDR=${DATANODE_ADDR:-10.35.168.17:50051}
+      - DATANODE_ADDRESSES=${DATANODE_ADDRESSES:-10.35.168.17:50051,10.35.168.112:50051,10.35.168.15:50051}
       - DATANODE_PORT=50051
     ports:
       - "50051:50051"
 
   consensus2:
-    build: 
+    build:
       context: ..
       dockerfile: consensus/Dockerfile
     environment:
       - NODE_ID=ATC-2
       - CONSENSUS_PORT=:50060
-      - PEER_ADDRESSES=ATC-1=10.35.168.16:50060,ATC-3=10.35.168.112:50060
+      - PEER_ADDRESSES=ATC-1=${CONSENSUS1_ADDR:-10.35.168.16:50060},ATC-3=${CONSENSUS3_ADDR:-10.35.168.112:50060}
     ports:
       - "50060:50060"
 
   ryw_client3:
-    build: 
+    build:
       context: ..
       dockerfile: ryw_client/Dockerfile
     environment:
       - CLIENT_ID=Pasajero-3
-      - COORDINATOR_ADDR=10.35.168.112:50070
+      - COORDINATOR_ADDR=${COORDINATOR_ADDR:-10.35.168.112:50070}
       - DATANODE_PORT=50051
 
 
