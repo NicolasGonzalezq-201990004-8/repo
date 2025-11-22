@@ -68,11 +68,13 @@ func NewDatanodeServer() *DatanodeServer {
 		}
 	}
 
+	s.startPeerReconnect(5 * time.Second)
+
 	return s
 }
 
 func (s *DatanodeServer) dialPeer(addr string) dpb.DatanodeServiceClient {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
@@ -83,6 +85,32 @@ func (s *DatanodeServer) dialPeer(addr string) dpb.DatanodeServiceClient {
 
 	log.Printf("[Datanode %s] Conectado a peer %s", s.id, addr)
 	return dpb.NewDatanodeServiceClient(conn)
+}
+
+func (s *DatanodeServer) startPeerReconnect(interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+
+		for range ticker.C {
+			var pending []string
+
+			s.mu.Lock()
+			for _, addr := range s.gossipAddrs {
+				if s.gossipClients[addr] == nil {
+					pending = append(pending, addr)
+				}
+			}
+			s.mu.Unlock()
+
+			for _, addr := range pending {
+				if cli := s.dialPeer(addr); cli != nil {
+					s.mu.Lock()
+					s.gossipClients[addr] = cli
+					s.mu.Unlock()
+				}
+			}
+		}
+	}()
 }
 
 func priority(state string) int {
