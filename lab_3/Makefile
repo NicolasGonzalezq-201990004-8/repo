@@ -6,19 +6,19 @@ DEPLOY_DIR=deploy
 
 docker-vm1:
 	@echo ">>> Ejecutando Docker Compose para MV1..."
-	docker-compose -f $(DEPLOY_DIR)/compose-mv1.yml up --build
+	docker-compose -f $(DEPLOY_DIR)/compose-mv1.yml build --no-cache
 
 docker-vm2:
 	@echo ">>> Ejecutando Docker Compose para MV2..."
-	docker-compose -f $(DEPLOY_DIR)/compose-mv2.yml up --build
+	docker-compose -f $(DEPLOY_DIR)/compose-mv2.yml build --no-cache
 
 docker-vm3:
 	@echo ">>> Ejecutando Docker Compose para MV3..."
-	docker-compose -f $(DEPLOY_DIR)/compose-mv3.yml up --build
+	docker-compose -f $(DEPLOY_DIR)/compose-mv3.yml build --no-cache
 
 docker-vm4:
 	@echo ">>> Ejecutando Docker Compose para MV4..."
-	docker-compose -f $(DEPLOY_DIR)/compose-mv4.yml up --build
+	docker-compose -f $(DEPLOY_DIR)/compose-mv4.yml build --no-cache
 
 start-vm1:
 	@echo ">>> Iniciando MV1 (Sin reconstruir)..."

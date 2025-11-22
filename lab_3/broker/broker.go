@@ -75,23 +75,22 @@ func NewBrokerServer() *BrokerServer {
 		reportChan:     make(chan string, 100),
 	}
 	for _, addr := range datanodeAddrs {
-		log.Printf("Intentando conexión con el Datanode %s", addr)
+		log.Printf("Registrando Datanode en el pool: %s", addr)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
-		cancel()
+		conn, err := grpc.Dial(addr, grpc.WithInsecure())
 
 		if err != nil {
-			log.Printf("[WARN] No se pudo conectar al Datanode %s: %v (se omitirá)", addr, err)
+			log.Printf("[ERROR] Falló el dial gRPC a %s: %v", addr, err)
 			continue
 		}
 
 		client := dpb.NewDatanodeServiceClient(conn)
+
 		server.datanodeClients = append(server.datanodeClients, client)
 		server.datanodeAddresses = append(server.datanodeAddresses, addr)
-		log.Printf("Broker conectado al Datanode %s", addr)
-	}
 
+		log.Printf("Datanode %s agregado (conexión en background).", addr)
+	}
 	if len(server.datanodeClients) == 0 {
 		log.Printf("[WARN] No se pudo conectar a ningún Datanode al inicio.")
 	}

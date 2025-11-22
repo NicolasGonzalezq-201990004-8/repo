@@ -33,6 +33,7 @@ type DatanodeServer struct {
 func NewDatanodeServer() *DatanodeServer {
 	id := os.Getenv("DATANODE_ID")
 	if id == "" {
+		log.Fatal("Falta DATANODE_ID")
 		id = "datanode_default"
 	}
 
