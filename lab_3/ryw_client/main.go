@@ -66,7 +66,6 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	if clientID == "" {
 		log.Fatal("CLIENT_ID NO CONFIGURADA")
-		clientID = "Pasajero-Genérico"
 	}
 
 	availableFlights := loadFlightCatalog()
