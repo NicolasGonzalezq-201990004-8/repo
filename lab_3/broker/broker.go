@@ -76,9 +76,14 @@ func NewBrokerServer() *BrokerServer {
 	}
 	for _, addr := range datanodeAddrs {
 		log.Printf("Intentando conexión con el Datanode %s", addr)
-		conn, err := grpc.Dial(addr, grpc.WithInsecure()) //, grpc.WithBlock()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
+		cancel()
+
 		if err != nil {
-			log.Fatalf("No se pudo conectar al Datanode %s: %v", addr, err)
+			log.Printf("[WARN] No se pudo conectar al Datanode %s: %v (se omitirá)", addr, err)
+			continue
 		}
 
 		client := dpb.NewDatanodeServiceClient(conn)
@@ -87,16 +92,30 @@ func NewBrokerServer() *BrokerServer {
 		log.Printf("Broker conectado al Datanode %s", addr)
 	}
 
+	if len(server.datanodeClients) == 0 {
+		log.Printf("[WARN] No se pudo conectar a ningún Datanode al inicio.")
+	}
+
 	for _, addr := range consensusAddrs {
 		log.Printf("Intentando conexión con el Nodo de consenso %s", addr)
-		conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock())
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
+		cancel()
+
 		if err != nil {
-			log.Fatalf("No se pudo conectar al Nodo de Consenso %s: %v", addr, err)
+			log.Printf("[WARN] No se pudo conectar al Nodo de Consenso %s: %v (se omitirá)", addr, err)
+			continue
 		}
+
 		client := cspb.NewConsensusServiceClient(conn)
 		server.consensusClients = append(server.consensusClients, client)
 		server.consensusAddresses = append(server.consensusAddresses, addr)
 		log.Printf("Broker conectado al nodo de Consenso %s", addr)
+	}
+
+	if len(server.consensusClients) == 0 {
+		log.Printf("[WARN] No hay nodos de consenso disponibles al inicio.")
 	}
 	//FASE 1
 	server.loadFlightCatalog()
@@ -138,56 +157,56 @@ func (s *BrokerServer) GetDatanode(ctx context.Context, req *cmpb.Empty) (*bpb.D
 }
 
 func (s *BrokerServer) CheckIn(ctx context.Context, req *cmpb.CheckInRequest) (*cmpb.CheckInResponse, error) {
-    var datanodeClient dpb.DatanodeServiceClient
+	var datanodeClient dpb.DatanodeServiceClient
 
-    // 1) Intentar respetar afinidad si viene TargetDatanodeId
-    if req.TargetDatanodeId != "" {
-        s.mu.Lock()
-        for i, addr := range s.datanodeAddresses {
-            if addr == req.TargetDatanodeId {
-                datanodeClient = s.datanodeClients[i]
-                break
-            }
-        }
-        s.mu.Unlock()
+	// 1) Intentar respetar afinidad si viene TargetDatanodeId
+	if req.TargetDatanodeId != "" {
+		s.mu.Lock()
+		for i, addr := range s.datanodeAddresses {
+			if addr == req.TargetDatanodeId {
+				datanodeClient = s.datanodeClients[i]
+				break
+			}
+		}
+		s.mu.Unlock()
 
-        if datanodeClient != nil {
-            log.Printf("[Broker] Check-In con afinidad: redirigiendo a %s", req.TargetDatanodeId)
-        } else {
-            log.Printf("[Broker] WARNING: TargetDatanodeId=%s no encontrado, usando round-robin", req.TargetDatanodeId)
-        }
-    }
+		if datanodeClient != nil {
+			log.Printf("[Broker] Check-In con afinidad: redirigiendo a %s", req.TargetDatanodeId)
+		} else {
+			log.Printf("[Broker] WARNING: TargetDatanodeId=%s no encontrado, usando round-robin", req.TargetDatanodeId)
+		}
+	}
 
-    // 2) Si no había afinidad válida, usar round-robin
-    if datanodeClient == nil {
-        var addr string
-        datanodeClient, addr = s.selectNextDatanode()
-        if datanodeClient == nil {
-            return nil, status.Errorf(codes.Unavailable, "No hay Datanodes disponibles para el Check-in.")
-        }
-        log.Printf("[Broker] Check-In sin afinidad. Usando Datanode %s (round-robin).", addr)
-    }
+	// 2) Si no había afinidad válida, usar round-robin
+	if datanodeClient == nil {
+		var addr string
+		datanodeClient, addr = s.selectNextDatanode()
+		if datanodeClient == nil {
+			return nil, status.Errorf(codes.Unavailable, "No hay Datanodes disponibles para el Check-in.")
+		}
+		log.Printf("[Broker] Check-In sin afinidad. Usando Datanode %s (round-robin).", addr)
+	}
 
-    log.Printf("[Broker] Enrutando solicitud de Check-In para Vuelo %s (Passenger=%s, Seat=%s).",
-        req.FlightId, req.PassengerId, req.Seat)
+	log.Printf("[Broker] Enrutando solicitud de Check-In para Vuelo %s (Passenger=%s, Seat=%s).",
+		req.FlightId, req.PassengerId, req.Seat)
 
-    resp, err := datanodeClient.CheckIn(ctx, req)
-    if err != nil {
-        log.Printf("Error al redirigir Check-In al Datanode: %v", err)
-        return nil, err
-    }
+	resp, err := datanodeClient.CheckIn(ctx, req)
+	if err != nil {
+		log.Printf("Error al redirigir Check-In al Datanode: %v", err)
+		return nil, err
+	}
 
-    if resp.Success {
-        log.Printf("[Broker] Check-In exitoso para Vuelo %s | Asiento: %s.", req.FlightId, req.Seat)
-        s.reportChan <- fmt.Sprintf("CHECK-IN EXITOSO: Vuelo %s | Asiento: %s (Passenger=%s)",
-            req.FlightId, req.Seat, req.PassengerId)
-    } else {
-        log.Printf("[Broker] Check-In fallido para Vuelo %s | Asiento: %s.", req.FlightId, req.Seat)
-        s.reportChan <- fmt.Sprintf("CHECK-IN FALLIDO: Vuelo %s | Asiento: %s (Passenger=%s)",
-            req.FlightId, req.Seat, req.PassengerId)
-    }
+	if resp.Success {
+		log.Printf("[Broker] Check-In exitoso para Vuelo %s | Asiento: %s.", req.FlightId, req.Seat)
+		s.reportChan <- fmt.Sprintf("CHECK-IN EXITOSO: Vuelo %s | Asiento: %s (Passenger=%s)",
+			req.FlightId, req.Seat, req.PassengerId)
+	} else {
+		log.Printf("[Broker] Check-In fallido para Vuelo %s | Asiento: %s.", req.FlightId, req.Seat)
+		s.reportChan <- fmt.Sprintf("CHECK-IN FALLIDO: Vuelo %s | Asiento: %s (Passenger=%s)",
+			req.FlightId, req.Seat, req.PassengerId)
+	}
 
-    return resp, nil
+	return resp, nil
 }
 
 func (s *BrokerServer) RequestRunwayAssignment(ctx context.Context, flightID string) (*cspb.RunwayResponse, error) {
@@ -234,22 +253,22 @@ func (s *BrokerServer) RequestRunwayAssignment(ctx context.Context, flightID str
 }
 
 func (s *BrokerServer) BroadcastUpdate(ctx context.Context, update *cmpb.FlightUpdate) {
-    dnClient, addr := s.selectNextDatanode()
-    if dnClient == nil {
-        log.Printf("[Broker] No hay datanodes disponibles para BroadcastUpdate de vuelo %s", update.FlightId)
-        return
-    }
+	dnClient, addr := s.selectNextDatanode()
+	if dnClient == nil {
+		log.Printf("[Broker] No hay datanodes disponibles para BroadcastUpdate de vuelo %s", update.FlightId)
+		return
+	}
 
-    log.Printf("[Broker] Enviando actualización de vuelo %s (Status: %s, Gate: %s) al Datanode %s",
-        update.FlightId, update.Status, update.Gate, addr)
+	log.Printf("[Broker] Enviando actualización de vuelo %s (Status: %s, Gate: %s) al Datanode %s",
+		update.FlightId, update.Status, update.Gate, addr)
 
-    go func() {
-        _, err := dnClient.ApplyUpdate(context.Background(), update)
-        if err != nil {
-            log.Printf("[Broker] Error al enviar actualización (Vuelo: %s) al Datanode %s: %v",
-                update.FlightId, addr, err)
-        }
-    }()
+	go func() {
+		_, err := dnClient.ApplyUpdate(context.Background(), update)
+		if err != nil {
+			log.Printf("[Broker] Error al enviar actualización (Vuelo: %s) al Datanode %s: %v",
+				update.FlightId, addr, err)
+		}
+	}()
 }
 
 func (s *BrokerServer) GetSeats(ctx context.Context, req *cmpb.SeatsRequest) (*cmpb.SeatsResponse, error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/csv"
 	"io"
 	"log"
@@ -65,7 +66,6 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	if clientID == "" {
 		log.Fatal("CLIENT_ID NO CONFIGURADA")
-		clientID = "Pasajero-Genérico"
 	}
 
 	availableFlights := loadFlightCatalog()
@@ -77,9 +77,21 @@ func main() {
 
 	log.Printf("Iniciando Cliente RYW [%s]. Conectando a %s...", clientID, coordAddr)
 
-	conn, err := grpc.Dial(coordAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
-	if err != nil {
-		log.Fatalf("No se pudo conectar al Coordinador: %v", err)
+	var (
+		conn *grpc.ClientConn
+		err  error
+	)
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		conn, err = grpc.DialContext(ctx, coordAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+		cancel()
+
+		if err == nil {
+			break
+		}
+
+		log.Printf("No se pudo conectar al Coordinador (%v). Reintentando en 3s...", err)
+		time.Sleep(3 * time.Second)
 	}
 	defer conn.Close()
 
