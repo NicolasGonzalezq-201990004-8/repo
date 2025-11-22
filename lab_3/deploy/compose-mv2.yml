@@ -7,8 +7,9 @@ services:
       - NODE_ID=ATC-1
       - CONSENSUS_PORT=:50060
       - PEER_ADDRESSES=ATC-2=${CONSENSUS2_ADDR:-10.35.168.17:50060},ATC-3=${CONSENSUS3_ADDR:-10.35.168.122:50060}
-    ports:
-      - "50060:50060"
+    # ports:
+    #   - "50060:50060"
+    network_mode: "host"
 
   ryw_client2:
     build:
@@ -18,6 +19,7 @@ services:
       - CLIENT_ID=Pasajero-2
       - COORDINATOR_ADDR=${COORDINATOR_ADDR:-10.35.168.122:50070}
       - DATANODE_PORT=50051
+    network_mode: "host"
 
   mr_client2:
     container_name: mr_client2
@@ -27,5 +29,6 @@ services:
     environment:
       - BROKER_ADDR=${BROKER_ADDR:-10.35.168.15:50050}
       - CLIENT_ID=MR-Pass-2
+    network_mode: "host"
 
 

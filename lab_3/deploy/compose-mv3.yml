@@ -8,8 +8,9 @@ services:
       - DATANODE_ADDR=${DATANODE_ADDR:-10.35.168.17:50051}
       - DATANODE_ADDRESSES=${DATANODE_ADDRESSES:-10.35.168.17:50051,10.35.168.122:50051,10.35.168.15:50051}
       - DATANODE_PORT=50051
-    ports:
-      - "50051:50051"
+    # ports:
+    #   - "50051:50051"
+    network_mode: "host"
 
   consensus2:
     build:
@@ -19,8 +20,9 @@ services:
       - NODE_ID=ATC-2
       - CONSENSUS_PORT=:50060
       - PEER_ADDRESSES=ATC-1=${CONSENSUS1_ADDR:-10.35.168.16:50060},ATC-3=${CONSENSUS3_ADDR:-10.35.168.122:50060}
-    ports:
-      - "50060:50060"
+    # ports:
+    #   - "50060:50060"
+    network_mode: "host"
 
   ryw_client3:
     build:
@@ -30,5 +32,6 @@ services:
       - CLIENT_ID=Pasajero-3
       - COORDINATOR_ADDR=${COORDINATOR_ADDR:-10.35.168.122:50070}
       - DATANODE_PORT=50051
+    network_mode: "host"
 
 
